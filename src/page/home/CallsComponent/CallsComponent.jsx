@@ -13,17 +13,18 @@ const fields = [
   {
     name: "Agent",
     id: "",
+    isAdd: false,
     options: agentData.map(agent => agent.agent_name)
   },
-  { name: "Call ID", id: "call_id", options: [] },
-  { name: "Batch Call ID", id: "", options: [] },
-  { name: "Type", id: "call_type", options: ["Inbound", "Outbound", "Automated", "Manual"] },
-  { name: "Call Duration", id: "", options: [] },
-  { name: "From", id: "", options: [] },
-  { name: "To", id: "", options: [] },
-  { name: "User Sentiment", id: "user_sentiment", options: ["Positive", "Neutral", "Negative", "Unknown"] },
+  { name: "Call ID", id: "call_id", isAdd: false, options: [] },
+  { name: "Batch Call ID", id: "", isAdd: false, options: [] },
+  { name: "Type", id: "call_type", isAdd: false, options: ["Inbound", "Outbound", "Automated", "Manual"] },
+  { name: "Call Duration", id: "", isAdd: false, options: [] },
+  { name: "From", id: "", isAdd: false, options: [] },
+  { name: "To", id: "", isAdd: false, options: [] },
+  { name: "User Sentiment", id: "user_sentiment", isAdd: false, options: ["Positive", "Neutral", "Negative", "Unknown"] },
   {
-    name: "Disconnection Reason", id: "disconnection_reason", options: [
+    name: "Disconnection Reason", id: "disconnection_reason", isAdd: false, options: [
       "User Hangup",
       "Agent Hangup",
       "Call Transfer",
@@ -53,15 +54,15 @@ const fields = [
     ]
   },
   {
-    name: "Call Successful", id: "call_successful", options: ["Success", "Unsuccess"]
+    name: "Call Successful", id: "call_successful", isAdd: false, options: ["Success", "Unsuccess"]
   },
   {
-    name: "Call Status", id: "call_status", options: [
+    name: "Call Status", id: "call_status", isAdd: false, options: [
       "ended",
       "ongoing",
       "error"]
   },
-  { name: "End to End Latency", id: "", options: [] } // Added End to End Latency field
+  { name: "End to End Latency", id: "", isAdd: false, options: [] } // Added End to End Latency field
 ];
 
 
@@ -75,6 +76,7 @@ export default function CallsComponent() {
   const [isOpenFilter, set_isOpenFilter] = useState(false);
   const [openSubDropdown, setOpenSubDropdown] = useState(null);
   const [selectedOptions, setSelectedOptions] = useState({});
+  const [tempSelectedOptions, setTempSelectedOptions] = useState({});
   const [callIdFilter, setCallIdFilter] = useState("");
   const [batchCallIdFilter, setBatchCallIdFilter] = useState("");
   const [fromFilter, setFromFilter] = useState("");
@@ -86,6 +88,8 @@ export default function CallsComponent() {
   const [latencyValue, setLatencyValue] = useState("");
   const [latencyRange, setLatencyRange] = useState([null, null]); // For 'Is Between' condition
   const dropdownFilterRef = useRef(null);
+  const [filterMainOptionBox, set_filterMainOptionBox] = useState(true);
+
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -112,33 +116,49 @@ export default function CallsComponent() {
   };
 
   const applyFilters = () => {
-    console.log("Selected Filters:", selectedOptions);
-    
-    
-    for (let index = 0; index < fields.length; index++) {
-      const element = fields[index];
-      // console.log([element.id])
-      if(selectedOptions[element.name]){
-        // console.log([selectedOptions[element.name]])
-        const newDD = dataArray.filter(dt => selectedOptions[element.name].includes(dt[element.id]))
-        console.log(newDD)
-      }
-      // console.log(element.name, selectedOptions[element.name]);
+    setSelectedOptions(tempSelectedOptions);
+    console.log("Selected Filters:", tempSelectedOptions);
 
-    }
-   
-    // console.log("Call ID Filter:", callIdFilter);
-    // console.log("Batch Call ID Filter:", batchCallIdFilter);
-    // console.log("From Filter:", fromFilter);
-    // console.log("To Filter:", toFilter);
-    // console.log("Call Duration Condition:", callDurationCondition);
-    // console.log("Call Duration Value:", callDurationValue);
-    // console.log("Call Duration Range:", callDurationRange);
-    // console.log("Latency Condition:", latencyCondition);
-    // console.log("Latency Value:", latencyValue);
-    // console.log("Latency Range:", latencyRange);
-    // setOpenSubDropdown(null);
-    // set_isOpenFilter(false);
+    // for (let index = 0; index < fields.length; index++) {
+    //   const element = fields[index];
+    //   // console.log([element.id])
+    //   if (selectedOptions[element.name]) {
+    //     // console.log([selectedOptions[element.name]])
+    //     const newDD = dataArray.filter(dt => selectedOptions[element.name].includes(dt[element.id]))
+    //     console.log(newDD)
+    //   }
+    //   // console.log(element.name, selectedOptions[element.name]);
+    // }
+
+    console.log("Call ID Filter:", callIdFilter);
+    console.log("Batch Call ID Filter:", batchCallIdFilter);
+    console.log("From Filter:", fromFilter);
+    console.log("To Filter:", toFilter);
+    console.log("Call Duration Condition:", callDurationCondition);
+    console.log("Call Duration Value:", callDurationValue);
+    console.log("Call Duration Range:", callDurationRange);
+    console.log("Latency Condition:", latencyCondition);
+    console.log("Latency Value:", latencyValue);
+    console.log("Latency Range:", latencyRange);
+    setOpenSubDropdown(null);
+    set_isOpenFilter(false);
+  };
+  const toggleTempOptionSelection = (fieldName, option) => {
+    setTempSelectedOptions((prev) => {
+      const prevSelected = prev[fieldName] || [];
+      const newSelected = prevSelected.includes(option)
+        ? prevSelected.filter((item) => item !== option) // Deselect
+        : [...prevSelected, option]; // Select
+
+      return { ...prev, [fieldName]: newSelected };
+    });
+  };
+
+
+  const cancelFilters = () => {
+    setTempSelectedOptions(selectedOptions);
+    set_filterMainOptionBox(true)
+    setOpenSubDropdown(null);
   };
 
 
@@ -252,13 +272,13 @@ export default function CallsComponent() {
         </div>
 
         <div className="flex gap-3">
-          <button className="custom-button-1">
+          <button onClick={() => [setOpenSubDropdown("Call Successful"), set_filterMainOptionBox(false),  set_isOpenFilter(true)]} className="custom-button-1">
             <Calendar className="w-4 h-4" />
             Date Range
           </button>
           <div className="relative" ref={dropdownFilterRef}>
             <button
-              onClick={() => set_isOpenFilter(!isOpenFilter)}
+              onClick={() => [set_isOpenFilter(!isOpenFilter), set_filterMainOptionBox(true), setOpenSubDropdown(null)]}
               className="custom-button-1"
             >
               <Filter className="w-4 h-4" /> Filter
@@ -267,116 +287,124 @@ export default function CallsComponent() {
             {isOpenFilter && (
               <div style={{ color: '#0e121b' }} className="absolute bg-white shadow-lg p-2 rounded-lg w-64 mt-2 border border-gray-300 z-10">
                 {fields.map((field) => (
-                  <div key={field.name} className="relative">
-                    <div
-                      className="flex justify-between items-center rounded-md p-1 hover:bg-gray-100 cursor-pointer"
-                      onClick={() => setOpenSubDropdown(openSubDropdown === field.name ? null : field.name)}
-                    >
-                      <div className="flex items-center">
-                        <CirclePlus size={14} className="mr-2" />
-                        <span style={{ fontSize: 14 }}>{field.name}</span>
+                  <div key={field.name} >
+                    {
+                      filterMainOptionBox && field.isAdd === false &&
+                      <div
+                        className="flex justify-between items-center rounded-md p-1 hover:bg-gray-100 cursor-pointer"
+                        onClick={() => [setOpenSubDropdown(openSubDropdown === field.name ? null : field.name),
+                        set_filterMainOptionBox(false)
+                        ]}
+                      >
+                        <div className="flex items-center">
+                          <CirclePlus size={14} className="mr-2" />
+                          <span style={{ fontSize: 14 }}>{field.name}</span>
+                        </div>
+                        <ChevronDown
+                          size={14}
+                          className={`transition-transform ${openSubDropdown === field.name ? "rotate-180" : ""}`}
+                        />
                       </div>
-                      <ChevronDown
-                        size={14}
-                        className={`transition-transform ${openSubDropdown === field.name ? "rotate-180" : ""}`}
-                      />
-                    </div>
+                    }
 
                     {openSubDropdown === field.name && (
-                      <div className="absolute left-full top-0 ml-2 w-80 bg-white border border-gray-300 shadow-lg rounded-md p-3">
-                        <p style={{ fontSize: 14 }} className="text-gray-600 font-semibold mb-2">Filter by {field.name}</p>
+                      <div>
+                        <div style={{ maxHeight: 300, overflow: 'auto' }}>
+                          <p style={{ fontSize: 14 }} className="text-gray-600 font-semibold mb-2">Filter by {field.name}</p>
 
-                        {field.name === "Call ID" || field.name === "Batch Call ID" || field.name === "From" || field.name === "To" ? (
-                          <div className="mb-4">
-                            <input
-                              type="text"
-                              value={field.name === "Call ID" ? callIdFilter :
-                                field.name === "Batch Call ID" ? batchCallIdFilter :
-                                  field.name === "From" ? fromFilter : toFilter}
-                              onChange={(e) =>
-                                field.name === "Call ID"
-                                  ? setCallIdFilter(e.target.value)
-                                  : field.name === "Batch Call ID"
-                                    ? setBatchCallIdFilter(e.target.value)
-                                    : field.name === "From"
-                                      ? setFromFilter(e.target.value)
-                                      : setToFilter(e.target.value)
-                              }
-                              style={{ fontSize: 14 }}
-                              className="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                              placeholder={`Enter ${field.name}`}
-                            />
-                          </div>
-                        ) : field.name === "Call Duration" || field.name === "End to End Latency" ? (
-                          <div className="mb-4">
-                            <select
-                              value={field.name === "Call Duration" ? callDurationCondition : latencyCondition}
-                              onChange={(e) => {
-                                if (field.name === "Call Duration") setCallDurationCondition(e.target.value);
-                                else setLatencyCondition(e.target.value);
-                              }}
-                              style={{ fontSize: 14 }}
-                              className="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                            >
-                              <option value="greater">Is Greater Than</option>
-                              <option value="less">Is Less Than</option>
-                              <option value="between">Is Between</option>
-                            </select>
-                            {((field.name === "Call Duration" && callDurationCondition === "between") ||
-                              (field.name === "End to End Latency" && latencyCondition === "between")) ? (
-                              <div className="mt-2 flex space-x-2">
-                                <input
-                                  type="number"
-                                  value={(field.name === "Call Duration" ? callDurationRange[0] : latencyRange[0]) || ""}
-                                  onChange={(e) =>
-                                    field.name === "Call Duration"
-                                      ? setCallDurationRange([e.target.value, callDurationRange[1]])
-                                      : setLatencyRange([e.target.value, latencyRange[1]])
-                                  }
-                                  style={{ fontSize: 14 }}
-                                  className="w-1/2 px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                                  placeholder="From"
-                                />
-                                <input
-                                  type="number"
-                                  value={(field.name === "Call Duration" ? callDurationRange[1] : latencyRange[1]) || ""}
-                                  onChange={(e) =>
-                                    field.name === "Call Duration"
-                                      ? setCallDurationRange([callDurationRange[0], e.target.value])
-                                      : setLatencyRange([latencyRange[0], e.target.value])
-                                  }
-                                  style={{ fontSize: 14 }}
-                                  className="w-1/2 px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                                  placeholder="To"
-                                />
-                              </div>
-                            ) : (
+                          {field.name === "Call ID" || field.name === "Batch Call ID" || field.name === "From" || field.name === "To" ? (
+                            <div className="mb-4">
                               <input
-                                type="number"
-                                value={field.name === "Call Duration" ? callDurationValue : latencyValue || ""}
+                                type="text"
+                                value={field.name === "Call ID" ? callIdFilter :
+                                  field.name === "Batch Call ID" ? batchCallIdFilter :
+                                    field.name === "From" ? fromFilter : toFilter}
                                 onChange={(e) =>
-                                  field.name === "Call Duration"
-                                    ? setCallDurationValue(e.target.value)
-                                    : setLatencyValue(e.target.value)
+                                  field.name === "Call ID"
+                                    ? setCallIdFilter(e.target.value)
+                                    : field.name === "Batch Call ID"
+                                      ? setBatchCallIdFilter(e.target.value)
+                                      : field.name === "From"
+                                        ? setFromFilter(e.target.value)
+                                        : setToFilter(e.target.value)
                                 }
                                 style={{ fontSize: 14 }}
                                 className="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                                placeholder="Enter Duration"
+                                placeholder={`Enter ${field.name}`}
                               />
-                            )}
-                          </div>
-                        ) : field.options.length > 0 ? (
-                          field.options.map((option) => (
-                            <label key={option} className="flex ps-2 p-1 items-center space-x-2 cursor-pointer hover:bg-gray-100 rounded-md">
-                              <input
-                                type="checkbox"
-                                checked={selectedOptions[field.name]?.includes(option) || false}
-                                onChange={() => toggleOptionSelection(field.name, option)}
-                              />
-                              <span style={{ fontSize: 14 }}>{option}</span>
-                            </label>
-                          ))
-                        ) : null}
+                            </div>
+                          ) : field.name === "Call Duration" || field.name === "End to End Latency" ? (
+                            <div className="mb-4">
+                              <select
+                                value={field.name === "Call Duration" ? callDurationCondition : latencyCondition}
+                                onChange={(e) => {
+                                  if (field.name === "Call Duration") setCallDurationCondition(e.target.value);
+                                  else setLatencyCondition(e.target.value);
+                                }}
+                                style={{ fontSize: 14 }}
+                                className="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                              >
+                                <option value="greater">Is Greater Than</option>
+                                <option value="less">Is Less Than</option>
+                                <option value="between">Is Between</option>
+                              </select>
+                              {((field.name === "Call Duration" && callDurationCondition === "between") ||
+                                (field.name === "End to End Latency" && latencyCondition === "between")) ? (
+                                <div className="mt-2 flex space-x-2">
+                                  <input
+                                    type="number"
+                                    value={(field.name === "Call Duration" ? callDurationRange[0] : latencyRange[0]) || ""}
+                                    onChange={(e) =>
+                                      field.name === "Call Duration"
+                                        ? setCallDurationRange([e.target.value, callDurationRange[1]])
+                                        : setLatencyRange([e.target.value, latencyRange[1]])
+                                    }
+                                    style={{ fontSize: 14 }}
+                                    className="w-1/2 px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                                    placeholder="From"
+                                  />
+                                  <input
+                                    type="number"
+                                    value={(field.name === "Call Duration" ? callDurationRange[1] : latencyRange[1]) || ""}
+                                    onChange={(e) =>
+                                      field.name === "Call Duration"
+                                        ? setCallDurationRange([callDurationRange[0], e.target.value])
+                                        : setLatencyRange([latencyRange[0], e.target.value])
+                                    }
+                                    style={{ fontSize: 14 }}
+                                    className="w-1/2 px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                                    placeholder="To"
+                                  />
+                                </div>
+                              ) : (
+                                <input
+                                  type="number"
+                                  value={field.name === "Call Duration" ? callDurationValue : latencyValue || ""}
+                                  onChange={(e) =>
+                                    field.name === "Call Duration"
+                                      ? setCallDurationValue(e.target.value)
+                                      : setLatencyValue(e.target.value)
+                                  }
+                                  style={{ fontSize: 14 }}
+                                  className="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                                  placeholder="Enter Duration"
+                                />
+                              )}
+                            </div>
+                          ) : field.options.length > 0 ? (
+                            field.options.map((option) => (
+                              <label key={option} className="flex ps-2 p-1 items-center space-x-2 cursor-pointer hover:bg-gray-100 rounded-md">
+                                <input
+                                  type="checkbox"
+                                  checked={tempSelectedOptions[field.name]?.includes(option) || false}
+                                  onChange={() => toggleTempOptionSelection(field.name, option)}
+                                />
+                                <span style={{ fontSize: 14 }}>{option}</span>
+                              </label>
+                            ))
+                          ) : null}
+                        </div>
+
                         <div style={{
                           marginTop: 10,
                           borderTop: '1px solid #e1e4ea',
@@ -384,7 +412,7 @@ export default function CallsComponent() {
                           textAlign: 'end'
                         }}>
                           <button
-                            onClick={() => setOpenSubDropdown(null)}
+                            onClick={cancelFilters}
                             className="custom-button-cancel"
                           >
                             Cancel
