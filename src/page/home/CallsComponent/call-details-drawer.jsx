@@ -1,17 +1,25 @@
-import { useState, useEffect } from "react";
-import { X, Check, Copy } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Download, X, Check, Copy, Award, Phone, Gauge, SquareCheck, Headset } from "lucide-react";
 import PropTypes from "prop-types";
-import AudioPlayer from "./AudioPlayer";
 
 export function CallDetailsDrawer({ call, isOpen, onClose }) {
     const [activeTab, setActiveTab] = useState("transcription");
     const [copiedId, setCopiedId] = useState(null);
+    const audioRef = useRef(null);
+
+    const audioPlayFrom = (getNum) => {
+        if (audioRef.current) {
+            audioRef.current.currentTime = parseInt(getNum);
+            audioRef.current.play();
+        }
+    };
 
     useEffect(() => {
         if (call) {
             console.log("Call Data:", call);
         }
     }, [call]);
+
 
     if (!isOpen) return null;
     if (!call) return <div className="fixed inset-y-0 right-0 w-[600px] bg-white p-6">Loading call details...</div>;
@@ -39,39 +47,60 @@ export function CallDetailsDrawer({ call, isOpen, onClose }) {
     };
 
     return (
-        <div className="fixed inset-y-0 right-0 w-[600px] bg-white border-l border-gray-200 shadow-lg transition-transform duration-300 ease-in-out z-50 capitalize">
+        <div style={{ overflowY: 'auto', paddingBottom: 100 }} className="fixed  inset-y-0 right-0 w-[600px] bg-white border-l border-gray-200 shadow-lg transition-transform duration-300 ease-in-out z-50 capitalize">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold">Call Details</h2>
-                <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
-                    <X className="w-5 h-5" />
-                </button>
-            </div>
-
-            {/* Call Details */}
-            <div className="p-4 border-b space-y-4 border-gray-200">
-                <div className="text-lg font-bold text-gray-900">
-                    {formatDate(call.start_timestamp)} - {call.call_type}
+            <div style={{ position: "sticky", top: 0, background: "#fff" }}>
+                <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                    <h2 className="text-lg font-semibold">Call Details</h2>
+                    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
+                        <X className="w-5 h-5" />
+                    </button>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <div>Agent: {call.agent || "Unknown"}</div>
-                    <div className="flex items-center gap-2 group">
-                        <span className="font-mono">Call ID: {call.call_id}</span>
-                        <button
-                            onClick={(e) => handleCopyClick(e, call.call_id)}
-                            className="relative p-1 hover:bg-gray-100 rounded"
-                        >
-                            {copiedId === call.call_id ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-500" />}
+
+                {/* Call Details */}
+                <div className="p-4 border-b space-y-4 border-gray-200">
+                    <div className="text-lg font-bold text-gray-900">
+                        {formatDate(call.start_timestamp)} - {call.call_type}
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <div className="flex items-center gap-2 group">
+                            <span className="font-mono">Agent: {call.agent || "Unknown"}({call?.agent_id?.slice(0, 3) + '...' + call?.agent_id?.slice(-3)})</span>
+                            <button
+                                onClick={(e) => handleCopyClick(e, call.agent_id)}
+                                className="relative p-1 hover:bg-gray-100 rounded"
+                            >
+                                {copiedId === call.agent_id ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-500" />}
+                            </button>
+                            {copiedId === call.agent_id && <span className="text-xs text-green-600">Copied!</span>}
+                        </div>
+                        <div className="flex items-center gap-2 group">
+                            <span className="font-mono">Call ID: {call?.call_id?.slice(0, 3) + '...' + call?.call_id?.slice(-3)}</span>
+                            <button
+                                onClick={(e) => handleCopyClick(e, call.call_id)}
+                                className="relative p-1 hover:bg-gray-100 rounded"
+                            >
+                                {copiedId === call.call_id ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-500" />}
+                            </button>
+                            {copiedId === call.call_id && <span className="text-xs text-green-600">Copied!</span>}
+                        </div>
+                    </div>
+                    <div className="text-sm text-gray-600">
+                        <div>Phone Call: {call.from_number} → {call.to_number}</div>
+                        <div>Duration: {formatDate(call.start_timestamp)} - {formatDate(call.end_timestamp)}</div>
+                        <div>Cost: ${(call.combined_cost / 100).toFixed(3)}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <audio ref={audioRef} controls style={{ height: 44 }}>
+                            <source src={call.recording_url}
+                                type="audio/wav" />
+                        </audio>
+                        <button style={{ height: 42, width: 42, padding: 10 }} className="custom-button-1">
+                            <a href={call.recording_url}>
+                                <Download className="w-5 h-5" />
+                            </a>
                         </button>
-                        {copiedId === call.call_id && <span className="text-xs text-green-600">Copied!</span>}
                     </div>
                 </div>
-                <div className="text-sm text-gray-600">
-                    <div>Phone Call: {call.from_number} → {call.to_number}</div>
-                    <div>Duration: {formatDate(call.start_timestamp)} - {formatDate(call.end_timestamp)}</div>
-                    <div>Cost: {call.combined_cost}</div>
-                </div>
-                <AudioPlayer audioUrl={call.recording_url} />
             </div>
 
             {/* Analysis Section */}
@@ -79,22 +108,47 @@ export function CallDetailsDrawer({ call, isOpen, onClose }) {
                 <h3 className="font-semibold mb-3">Conversation Analysis</h3>
                 <div className="space-y-2 text-sm text-gray-700">
                     <div className="flex items-center justify-between">
-                        <span>Call Successful</span>
+                        <span className="flex gap-2 items-center"><SquareCheck className="w-4 h-4" /> Call Successful</span>
                         <span className={call.call_successful ? "text-green-600" : "text-red-600"}>
-                            {call.call_successful}
+                            <span
+                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${call.call_successful ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                                    }`}
+                            >
+                                {call.call_successful ? "Successful" : "Unsuccessful"}
+                            </span>
                         </span>
                     </div>
                     <div className="flex items-center justify-between">
-                        <span>Call Status</span>
-                        <span>{call.call_status || "Unknown"}</span>
+                        <span className="flex gap-2 items-center"><Headset className="w-4 h-4" /> Call Status</span>
+                        <span
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${call.call_status === "ended" ? "bg-gray-100" : "bg-red-100 text-red-700"
+                                }`}
+                        >
+                            {call.call_status || "Unknown"}
+                        </span>
                     </div>
                     <div className="flex items-center justify-between">
-                        <span>User Sentiment</span>
-                        <span>{call.user_sentiment || "N/A"}</span>
+                        <span className="flex gap-2 items-center"><Award className="w-4 h-4" /> User Sentiment</span>
+                        <span
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${call.user_sentiment === "Positive"
+                                ? "bg-green-100 text-green-700"
+                                : call.user_sentiment === "Negative"
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-gray-100"
+                                }`}
+                        >
+                            {call.user_sentiment || "N/A"}
+                        </span>
                     </div>
                     <div className="flex items-center justify-between">
-                        <span>Disconnection Reason</span>
-                        <span>{call.disconnection_reason || "Unknown"}</span>
+                        <span className="flex gap-2 items-center"><Phone className="w-4 h-4" /> Disconnection Reason</span>
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100">
+                            {call.disconnection_reason || "Unknown"}
+                        </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <span className="flex gap-2 items-center"><Gauge className="w-4 h-4" /> End to End Latency</span>
+                        <span>{parseInt(call.latency) == 0 ? "" : parseInt(call.latency) + 'ms'}</span>
                     </div>
                 </div>
             </div>
@@ -124,9 +178,23 @@ export function CallDetailsDrawer({ call, isOpen, onClose }) {
                         <div className="">
                             {call.transcript_object && call.transcript_object.length > 0 ? (
                                 call.transcript_object.map((transcript, index) => (
-                                    <button key={index} className="space-y- text-start capitalize cursor-pointer hover:bg-gray-100 p-4">
-                                        <div className="text-sm font-medium text-gray-900">{transcript.role}</div>
-                                        <div className="text-sm text-gray-600">{transcript.content}</div>
+                                    <button
+                                        onClick={() => audioPlayFrom(transcript.start)}
+                                        key={index} style={{ width: '100%', }} className="space-y- text-start capitalize cursor-pointer hover:bg-gray-100 p-4">
+                                        <div style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: 'auto 50px',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between'
+
+                                        }}>
+                                            <div>
+                                                <div className="text-sm font-medium text-gray-900">{transcript.role}</div>
+                                                <div className="text-sm text-gray-600">{transcript.content}</div>
+                                            </div>
+                                            <div className="text-sm text-end text-gray-600">{parseInt(transcript.start / 60) + ":"}{parseInt(transcript.start % 60) < 10 ? "0" + parseInt(transcript.start % 60) : parseInt(transcript.start % 60)}</div>
+                                        </div>
+
                                     </button>
                                 ))
                             ) : (
