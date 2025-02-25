@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { dataArray } from "../../../data/dataArray";
 import {
-   Filter, Settings, Download, Share,
+  Filter, Settings, Download, Share,
   ArrowLeft, ArrowRight, Copy, Check,
   History, CirclePlus, ChevronDown, X
 } from "lucide-react";
@@ -20,7 +20,7 @@ const n_fields = [
   { name: "Call ID", id: "call_id", isAdd: false, ans: [], options: [] },
   { name: "Batch Call ID", id: "agent_id", isAdd: false, ans: [], options: [] },
   { name: "Type", id: "call_type", isAdd: false, ans: [], options: ["Inbound", "Outbound", "Automated", "Manual", "web_call"] },
-  { name: "Call Duration", id: "", isAdd: false, ans: [], options: [] },
+  { name: "Call Duration", id: "duration_ms", isAdd: false, ans: [], options: [] },
   { name: "From", id: "from_number", isAdd: false, ans: [], options: [] },
   { name: "To", id: "to_number", isAdd: false, ans: [], options: [] },
   { name: "User Sentiment", id: "user_sentiment", isAdd: false, ans: [], options: ["Positive", "Neutral", "Negative", "Unknown"] },
@@ -63,7 +63,7 @@ const n_fields = [
       "ongoing",
       "error"]
   },
-  { name: "End to End Latency", id: "", isAdd: false, ans: [], options: [] } // Added End to End Latency field
+  { name: "End to End Latency", id: "latency", isAdd: false, ans: [], options: [] } // Added End to End Latency field
 ];
 
 
@@ -101,7 +101,7 @@ export default function CallsComponent() {
 
   useEffect(() => {
     applyFilters()
-  }, [dateRange.to, dateRange.from] );
+  }, [dateRange.to, dateRange.from]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -200,6 +200,55 @@ export default function CallsComponent() {
       }
     };
 
+
+    if (callDurationCondition) {
+      let c_dataDurationArray = [];
+      const c_name = "Call Duration";
+      const c_id = "duration_ms";
+      const c_condition = callDurationCondition;
+      const c_from = parseInt(callDurationRange[0]) * 1000 * 60;
+      const c_to = parseInt(callDurationRange[1]) * 1000 * 60;
+      const c_value = parseInt(callDurationValue) * 1000 * 60;
+      if (c_from && c_to || c_value) {
+        for (let i = 0; i < filterData.length; i++) {
+          const element = filterData[i];
+          if (c_condition === "between" && c_from <= element.duration_ms && c_to >= element.duration_ms) {
+            c_dataDurationArray = [...c_dataDurationArray, element]
+          }
+          if (c_condition === "greater" && c_value <= element.duration_ms) {
+            c_dataDurationArray = [...c_dataDurationArray, element];
+          }
+          if (c_condition === "less" && c_value >= element.duration_ms) {
+            c_dataDurationArray = [...c_dataDurationArray, element]
+          }
+        }
+        filterData = c_dataDurationArray;
+      }
+    }
+    if (latencyCondition) {
+      let l_dataDurationArray = [];
+      const l_name = "End to End Latency";
+      const l_id = "latency";
+      const l_condition = latencyCondition;
+      const l_from = parseInt(latencyRange[0]);
+      const l_to = parseInt(latencyRange[1]);
+      const l_value = parseInt(latencyValue);
+      if(l_from && l_to ||  l_value){
+        for (let i = 0; i < filterData.length; i++) {
+          const element = filterData[i];
+          if (l_condition === "between" && l_from <= element.latency && l_to >= element.latency) {
+            l_dataDurationArray = [...l_dataDurationArray, element]
+          }
+          if (l_condition === "greater" && l_value <= element.latency) {
+            l_dataDurationArray = [...l_dataDurationArray, element];
+          }
+          if (l_condition === "less" && l_value >= element.latency && element.latency != 0) {
+            l_dataDurationArray = [...l_dataDurationArray, element]
+          }
+        }
+        filterData = l_dataDurationArray;
+      }
+    }
     const dateRange_from = new Date(dateRange.from).getTime();
     const dateRange_to = new Date(dateRange.to).getTime() + 86_399_999;
     if (dateRange_from && dateRange_to) {
@@ -207,7 +256,7 @@ export default function CallsComponent() {
       let dateD = []
       for (let i = 0; i < filterData.length; i++) {
         const element = filterData[i];
-        if(element.start_timestamp >= dateRange_from && element.start_timestamp <= dateRange_to){
+        if (element.start_timestamp >= dateRange_from && element.start_timestamp <= dateRange_to) {
           dateD = [...dateD, element]
         }
       }
@@ -223,13 +272,14 @@ export default function CallsComponent() {
     // console.log("Batch Call ID Filter:", batchCallIdFilter);
     // console.log("From Filter:", fromFilter);
     // console.log("To Filter:", toFilter);
+    // console.log("Call Duration Condition:", callDurationCondition);
+    // console.log("Call Duration Value:", callDurationValue);
+    // console.log("Call Duration Range:", callDurationRange);
+    // console.log("Latency Condition:", latencyCondition);
+    // console.log("Latency Value:", latencyValue);
+    // console.log("Latency Range:", latencyRange);
 
-    console.log("Call Duration Condition:", callDurationCondition);
-    console.log("Call Duration Value:", callDurationValue);
-    console.log("Call Duration Range:", callDurationRange);
-    console.log("Latency Condition:", latencyCondition);
-    console.log("Latency Value:", latencyValue);
-    console.log("Latency Range:", latencyRange);
+
     setOpenSubDropdown(null);
     set_isOpenFilter(false);
   };
@@ -386,7 +436,7 @@ export default function CallsComponent() {
               Export
             </button>
             <button className="p-2 text-gray-500 rounded-full hover:bg-gray-100">
-            <History className="w-5 h-5" />
+              <History className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -632,7 +682,6 @@ export default function CallsComponent() {
                   savedFields.includes(el) ? <th key={i}>{el}</th> : null
                 )
               }
-
             </tr>
           </thead>
           <tbody>
