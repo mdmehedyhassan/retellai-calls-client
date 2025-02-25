@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { CallDetailsDrawer } from "./call-details-drawer"
 import { agentData } from "../../../data/agentData";
+import DateRangePicker from "./DateRangePicker";
 
 
 const n_fields = [
@@ -87,11 +88,12 @@ export default function CallsComponent() {
   const [callDurationCondition, setCallDurationCondition] = useState("greater");
   const [callDurationValue, setCallDurationValue] = useState("");
   const [callDurationRange, setCallDurationRange] = useState([null, null]);
-  const [latencyCondition, setLatencyCondition] = useState("greater"); // Default to 'greater'
+  const [latencyCondition, setLatencyCondition] = useState("greater");
   const [latencyValue, setLatencyValue] = useState("");
-  const [latencyRange, setLatencyRange] = useState([null, null]); // For 'Is Between' condition
+  const [latencyRange, setLatencyRange] = useState([null, null]); 
   const dropdownFilterRef = useRef(null);
   const [filterMainOptionBox, set_filterMainOptionBox] = useState(true);
+  const [dateRange, setDateRange] = useState({ from: undefined, to: undefined });
 
   function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -361,8 +363,7 @@ export default function CallsComponent() {
 
         <div className="flex flex-wrap gap-3">
           <button className="custom-button-1">
-            <Calendar className="w-4 h-4" />
-            Date Range
+            <DateRangePicker range={dateRange} setRange={setDateRange} />
           </button>
           {
             fields.filter(element => element.isAdd === true).map(el => <div key={el.name}>
