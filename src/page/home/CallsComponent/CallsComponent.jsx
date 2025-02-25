@@ -130,20 +130,6 @@ export default function CallsComponent() {
     set_totalCustomArray(newDDDD)
   }, []);
 
-
-
-
-  // const toggleOptionSelection = (fieldName, option) => {
-  //   setSelectedOptions((prev) => {
-  //     const prevSelected = prev[fieldName] || [];
-  //     const newSelected = prevSelected.includes(option)
-  //       ? prevSelected.filter((item) => item !== option) // Deselect
-  //       : [...prevSelected, option]; // Select
-
-  //     return { ...prev, [fieldName]: newSelected };
-  //   });
-  // };
-
   const applyFilters = async (id) => {
     setSelectedOptions(tempSelectedOptions);
     let filterData = unfilterDataArray;
@@ -172,10 +158,8 @@ export default function CallsComponent() {
       },
     ];
 
-
     for (let index = 0; index < updatedFields.length; index++) {
       const element = updatedFields[index];
-      // console.log(element.name, '--------------', tempSelectedOptions[element.name], element.id)
       if (tempSelectedOptions[element.name]) {
         if (tempSelectedOptions[element.name].length >= 1) {
           updatedFields = updatedFields.map(field =>
@@ -200,10 +184,7 @@ export default function CallsComponent() {
       }
     };
 
-
-
-
-    const durationAndLatency = [
+    let durationAndLatency = [
       {
         name: "Call Duration",
         id: "duration_ms",
@@ -226,7 +207,13 @@ export default function CallsComponent() {
         m_to: latencyRange[1] + 'ms',
         m_value: latencyValue + 'ms',
       },
-    ]
+    ];
+    if(id === 'duration_ms'){
+      durationAndLatency = [durationAndLatency[1]]
+    }
+    if(id === 'latency'){
+      durationAndLatency = [durationAndLatency[0]]
+    }
     for (let index = 0; index < durationAndLatency.length; index++) {
       const el = durationAndLatency[index];
       let dataDurationArray = [];
@@ -235,8 +222,7 @@ export default function CallsComponent() {
       } else if (el.condition === "greater" && el.value < 0) {
         alert(`You can't search for 0 less in "Is Greater Then" filters.`)
       }
-
-      if (el.from && el.to || el.value >= 0) {
+      if (el.from && el.to || el.condition === "greater" && el.value >= 0 || el.condition === "less" && el.value > 0) {
         for (let i = 0; i < filterData.length; i++) {
           const element = filterData[i];
           if (el.condition === "between") {
@@ -248,50 +234,24 @@ export default function CallsComponent() {
             }
           }
           else {
-            if (el.condition === "greater" && el.value <= element[el.id]) {
+            if (el.condition === "greater" && el.value <= element[el.id] && element[el.id] != 0) {
               dataDurationArray = [...dataDurationArray, element];
             }
-            if (el.condition === "less" && el.value >= element[el.id] && element[el.id] != 0) {
+            if (el.condition === "less" && el.value >= element[el.id] && element[el.id] != 0  && el.value != 0) {
               dataDurationArray = [...dataDurationArray, element]
             }
             updatedFields = updatedFields.map(field =>
               field.name === el.name ? { ...field, isAdd: true, ans: [`is ${el.condition} than ${el.m_value}`] } : field
             );
           }
-
         }
         filterData = dataDurationArray;
       }
     }
 
-    // if (latencyCondition) {
-    //   let l_dataDurationArray = [];
-    //   const l_name = "End to End Latency";
-    //   const l_id = "latency";
-    //   const l_condition = latencyCondition;
-    //   const l_from = parseInt(latencyRange[0]);
-    //   const l_to = parseInt(latencyRange[1]);
-    //   const l_value = parseInt(latencyValue);
-    //   if(l_from && l_to ||  l_value){
-    //     for (let i = 0; i < filterData.length; i++) {
-    //       const element = filterData[i];
-    //       if (l_condition === "between" && l_from <= element.latency && l_to >= element.latency) {
-    //         l_dataDurationArray = [...l_dataDurationArray, element]
-    //       }
-    //       if (l_condition === "greater" && l_value <= element.latency) {
-    //         l_dataDurationArray = [...l_dataDurationArray, element];
-    //       }
-    //       if (l_condition === "less" && l_value >= element.latency && element.latency != 0) {
-    //         l_dataDurationArray = [...l_dataDurationArray, element]
-    //       }
-    //     }
-    //     filterData = l_dataDurationArray;
-    //   }
-    // }
     const dateRange_from = new Date(dateRange.from).getTime();
     const dateRange_to = new Date(dateRange.to).getTime() + 86_399_999;
     if (dateRange_from && dateRange_to) {
-      console.log(dateRange_from, dateRange_to, (dateRange_from - dateRange_to));
       let dateD = []
       for (let i = 0; i < filterData.length; i++) {
         const element = filterData[i];
@@ -302,23 +262,8 @@ export default function CallsComponent() {
       filterData = dateD;
     }
 
-
     set_fields(updatedFields);
     set_totalCustomArray(filterData);
-
-
-    // console.log("Call ID Filter:", callIdFilter);
-    // console.log("Batch Call ID Filter:", batchCallIdFilter);
-    // console.log("From Filter:", fromFilter);
-    // console.log("To Filter:", toFilter);
-    // console.log("Call Duration Condition:", callDurationCondition);
-    // console.log("Call Duration Value:", callDurationValue);
-    // console.log("Call Duration Range:", callDurationRange);
-    // console.log("Latency Condition:", latencyCondition);
-    // console.log("Latency Value:", latencyValue);
-    // console.log("Latency Range:", latencyRange);
-
-
     setOpenSubDropdown(null);
     set_isOpenFilter(false);
   };
@@ -365,13 +310,11 @@ export default function CallsComponent() {
     });
   };
 
-
   const cancelFilters = () => {
     setTempSelectedOptions(selectedOptions);
     set_isOpenFilter(false);
     setOpenSubDropdown(null);
   };
-
 
   const customizeFieldShowRef = useRef(null);
   useEffect(() => {
@@ -400,14 +343,17 @@ export default function CallsComponent() {
         : [...prev, field]
     );
   };
+
   const handleSave_customizeField = () => {
     setSavedFields([...selectedFields]);
     set_isCustomizeFieldShow(false)
   };
+
   const handleCancel_customizeField = () => {
     setSelectedFields([...savedFields]);
     set_isCustomizeFieldShow(false)
   };
+  
   const handleCopyClick = async (e, callId) => {
     e.stopPropagation()
     try {
@@ -420,18 +366,6 @@ export default function CallsComponent() {
       console.error("Failed to copy:", err)
     }
   }
-
-  // const formatDate = (timestamp) => {
-  //   console.log(timestamp)
-  //   return new Date(timestamp).toLocaleString("en-US", {
-  //     month: "2-digit",
-  //     day: "2-digit",
-  //     year: "numeric",
-  //     hour: "2-digit",
-  //     minute: "2-digit",
-  //     hour12: false,
-  //   })
-  // }
 
   const formatDateDay = (timestamp) => {
     const date = new Date(timestamp);
@@ -446,6 +380,7 @@ export default function CallsComponent() {
     const remainingSeconds = seconds % 60
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`
   }
+
   const handleRowClick = (call) => {
     setSelectedCall(call)
     setIsDrawerOpen(true)
