@@ -4,7 +4,7 @@ import Home from "./page/home/Home/Home";
 import './App.css';
 function App() {
   return (
-    <div className="font-[Inter]">
+    <div style={{fontFamily: '"Rubik", serif'}}>
       <Routes>
         <Route path="/" element={<Home />} />
       </Routes>

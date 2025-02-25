@@ -626,7 +626,7 @@ export default function CallsComponent() {
       <div style={{ maxHeight: '70vh' }} className="overflow-x-auto border border-[#e5e5e5] rounded-lg custom-scrollbar">
         <table style={{ fontSize: 14 }} className="w-full">
           <thead>
-            <tr className="calls-table-th-parent bg-gray-50 border-b border-[#e5e5e5]">
+            <tr className="calls-table-th-parent bg-gray-100 border-b border-[#e5e5e5]">
               {
                 allFields.map((el, i) =>
                   savedFields.includes(el) ? <th key={i}>{el}</th> : null
@@ -704,7 +704,7 @@ export default function CallsComponent() {
                 {
                   savedFields.includes("From") ? <td className="px-4 py-3">
                     <div className="flex items-center gap-2 group">
-                      <span className="font-mono text-xs">{call.from_number}</span>
+                      <span >{call.from_number}</span>
                       <button
                         onClick={(e) => handleCopyClick(e, call.from_number)}
                         className="relative p-1 opacity-0 group-hover:opacity-100 hover:bg-gray-100 rounded transition-opacity"
@@ -727,7 +727,7 @@ export default function CallsComponent() {
                 {
                   savedFields.includes("To") ? <td className="px-4 py-3">
                     <div className="flex items-center gap-2 group">
-                      <span className="font-mono text-xs">{call.to_number}</span>
+                      <span>{call.to_number}</span>
                       <button
                         onClick={(e) => handleCopyClick(e, call.to_number)}
                         className="relative p-1 opacity-0 group-hover:opacity-100 hover:bg-gray-100 rounded transition-opacity"
