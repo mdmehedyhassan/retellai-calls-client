@@ -201,54 +201,93 @@ export default function CallsComponent() {
     };
 
 
-    if (callDurationCondition) {
-      let c_dataDurationArray = [];
-      const c_name = "Call Duration";
-      const c_id = "duration_ms";
-      const c_condition = callDurationCondition;
-      const c_from = parseInt(callDurationRange[0]) * 1000 * 60;
-      const c_to = parseInt(callDurationRange[1]) * 1000 * 60;
-      const c_value = parseInt(callDurationValue) * 1000 * 60;
-      if (c_from && c_to || c_value) {
+
+
+    const durationAndLatency = [
+      {
+        name: "Call Duration",
+        id: "duration_ms",
+        condition: callDurationCondition,
+        from: parseInt(callDurationRange[0]) * 1000 * 60,
+        to: parseInt(callDurationRange[1]) * 1000 * 60,
+        value: parseInt(callDurationValue) * 1000 * 60,
+        m_from: callDurationRange[0] + ' mins',
+        m_to: callDurationRange[1] + ' mins',
+        m_value: callDurationValue + ' mins',
+      },
+      {
+        name: "End to End Latency",
+        id: "latency",
+        condition: latencyCondition,
+        from: parseInt(latencyRange[0]),
+        to: parseInt(latencyRange[1]),
+        value: parseInt(latencyValue),
+        m_from: latencyRange[0] + 'ms',
+        m_to: latencyRange[1] + 'ms',
+        m_value: latencyValue + 'ms',
+      },
+    ]
+    for (let index = 0; index < durationAndLatency.length; index++) {
+      const el = durationAndLatency[index];
+      let dataDurationArray = [];
+      if (el.condition === "less" && el.value <= 0 || el.condition === "between" && el.from <= 0 || el.condition === "between" && el.to <= 0) {
+        alert(`You can't search for 0 or less in "Is Between" or "Is Less Than" filters.`)
+      } else if (el.condition === "greater" && el.value < 0) {
+        alert(`You can't search for 0 less in "Is Greater Then" filters.`)
+      }
+
+      if (el.from && el.to || el.value >= 0) {
         for (let i = 0; i < filterData.length; i++) {
           const element = filterData[i];
-          if (c_condition === "between" && c_from <= element.duration_ms && c_to >= element.duration_ms) {
-            c_dataDurationArray = [...c_dataDurationArray, element]
+          if (el.condition === "between") {
+            if (el.from <= element[el.id] && el.to >= element[el.id]) {
+              dataDurationArray = [...dataDurationArray, element]
+              updatedFields = updatedFields.map(field =>
+                field.name === el.name ? { ...field, isAdd: true, ans: [`is between ${el.m_from} and  ${el.m_to}`] } : field
+              );
+            }
           }
-          if (c_condition === "greater" && c_value <= element.duration_ms) {
-            c_dataDurationArray = [...c_dataDurationArray, element];
+          else {
+            if (el.condition === "greater" && el.value <= element[el.id]) {
+              dataDurationArray = [...dataDurationArray, element];
+            }
+            if (el.condition === "less" && el.value >= element[el.id] && element[el.id] != 0) {
+              dataDurationArray = [...dataDurationArray, element]
+            }
+            updatedFields = updatedFields.map(field =>
+              field.name === el.name ? { ...field, isAdd: true, ans: [`is ${el.condition} than ${el.m_value}`] } : field
+            );
           }
-          if (c_condition === "less" && c_value >= element.duration_ms) {
-            c_dataDurationArray = [...c_dataDurationArray, element]
-          }
+
         }
-        filterData = c_dataDurationArray;
+        filterData = dataDurationArray;
       }
     }
-    if (latencyCondition) {
-      let l_dataDurationArray = [];
-      const l_name = "End to End Latency";
-      const l_id = "latency";
-      const l_condition = latencyCondition;
-      const l_from = parseInt(latencyRange[0]);
-      const l_to = parseInt(latencyRange[1]);
-      const l_value = parseInt(latencyValue);
-      if(l_from && l_to ||  l_value){
-        for (let i = 0; i < filterData.length; i++) {
-          const element = filterData[i];
-          if (l_condition === "between" && l_from <= element.latency && l_to >= element.latency) {
-            l_dataDurationArray = [...l_dataDurationArray, element]
-          }
-          if (l_condition === "greater" && l_value <= element.latency) {
-            l_dataDurationArray = [...l_dataDurationArray, element];
-          }
-          if (l_condition === "less" && l_value >= element.latency && element.latency != 0) {
-            l_dataDurationArray = [...l_dataDurationArray, element]
-          }
-        }
-        filterData = l_dataDurationArray;
-      }
-    }
+
+    // if (latencyCondition) {
+    //   let l_dataDurationArray = [];
+    //   const l_name = "End to End Latency";
+    //   const l_id = "latency";
+    //   const l_condition = latencyCondition;
+    //   const l_from = parseInt(latencyRange[0]);
+    //   const l_to = parseInt(latencyRange[1]);
+    //   const l_value = parseInt(latencyValue);
+    //   if(l_from && l_to ||  l_value){
+    //     for (let i = 0; i < filterData.length; i++) {
+    //       const element = filterData[i];
+    //       if (l_condition === "between" && l_from <= element.latency && l_to >= element.latency) {
+    //         l_dataDurationArray = [...l_dataDurationArray, element]
+    //       }
+    //       if (l_condition === "greater" && l_value <= element.latency) {
+    //         l_dataDurationArray = [...l_dataDurationArray, element];
+    //       }
+    //       if (l_condition === "less" && l_value >= element.latency && element.latency != 0) {
+    //         l_dataDurationArray = [...l_dataDurationArray, element]
+    //       }
+    //     }
+    //     filterData = l_dataDurationArray;
+    //   }
+    // }
     const dateRange_from = new Date(dateRange.from).getTime();
     const dateRange_to = new Date(dateRange.to).getTime() + 86_399_999;
     if (dateRange_from && dateRange_to) {
@@ -296,6 +335,14 @@ export default function CallsComponent() {
     }
     if (name === "To") {
       setToFilter("");
+    }
+    if (name === "Call Duration") {
+      setCallDurationValue("")
+      setCallDurationRange([null, null]);
+    }
+    if (name === "End to End Latency") {
+      setLatencyValue("")
+      setLatencyRange([null, null]);
     }
     setSelectedOptions(tempSelectedOptions[name] = [])
     const updatedFields = fields.map(field =>
