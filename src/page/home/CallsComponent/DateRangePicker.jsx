@@ -31,20 +31,21 @@ export default function DateRangePicker({ range, setRange }) {
 
   return (
     <div className="max-w-full" ref={dropdownRef}>
-      <button
+      <div
         onClick={() => setOpen(!open)}
         className="flex items-center"
       >
         <CalendarIcon className="h-4 w-4 me-1" />
         {range.from && range.to ? (
           <span>
-            {format(range.from, "MM/dd/yyyy")} -{" "}
+            {format(range.from, "MM/dd/yyyy")}
+            {" - "}
             {format(range.to, "MM/dd/yyyy")}
           </span>
         ) : (
           "Date Range"
         )}
-      </button>
+      </div>
       <div className="">
         {open && (
           <div className="w-fit absolute left-6 mt-2 bg-white border border-gray-300 shadow-lg rounded-lg p-4">

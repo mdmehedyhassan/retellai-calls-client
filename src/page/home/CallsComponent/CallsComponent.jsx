@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { dataArray } from "../../../data/dataArray";
 import {
-  Calendar, Filter, Settings, Download, Clock,
+   Filter, Settings, Download, Share,
   ArrowLeft, ArrowRight, Copy, Check,
   History, CirclePlus, ChevronDown, X
 } from "lucide-react";
@@ -90,7 +90,7 @@ export default function CallsComponent() {
   const [callDurationRange, setCallDurationRange] = useState([null, null]);
   const [latencyCondition, setLatencyCondition] = useState("greater");
   const [latencyValue, setLatencyValue] = useState("");
-  const [latencyRange, setLatencyRange] = useState([null, null]); 
+  const [latencyRange, setLatencyRange] = useState([null, null]);
   const dropdownFilterRef = useRef(null);
   const [filterMainOptionBox, set_filterMainOptionBox] = useState(true);
   const [dateRange, setDateRange] = useState({ from: undefined, to: undefined });
@@ -98,6 +98,10 @@ export default function CallsComponent() {
   function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
+
+  useEffect(() => {
+    applyFilters()
+  }, [dateRange.to, dateRange.from] );
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -125,6 +129,8 @@ export default function CallsComponent() {
     set_unfilterDataArray(newDDDD)
     set_totalCustomArray(newDDDD)
   }, []);
+
+
 
 
   // const toggleOptionSelection = (fieldName, option) => {
@@ -192,9 +198,25 @@ export default function CallsComponent() {
         );
         filterData = filterData.filter(dt => [text_element.value].includes(dt[text_element.id]))
       }
+    };
+
+    const dateRange_from = new Date(dateRange.from).getTime();
+    const dateRange_to = new Date(dateRange.to).getTime() + 86_399_999;
+    if (dateRange_from && dateRange_to) {
+      console.log(dateRange_from, dateRange_to, (dateRange_from - dateRange_to));
+      let dateD = []
+      for (let i = 0; i < filterData.length; i++) {
+        const element = filterData[i];
+        if(element.start_timestamp >= dateRange_from && element.start_timestamp <= dateRange_to){
+          dateD = [...dateD, element]
+        }
+      }
+      filterData = dateD;
     }
-    set_fields(updatedFields)
-    set_totalCustomArray(filterData)
+
+
+    set_fields(updatedFields);
+    set_totalCustomArray(filterData);
 
 
     // console.log("Call ID Filter:", callIdFilter);
@@ -302,15 +324,23 @@ export default function CallsComponent() {
     }
   }
 
-  const formatDate = (timestamp) => {
-    return new Date(timestamp).toLocaleString("en-US", {
-      month: "2-digit",
-      day: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    })
+  // const formatDate = (timestamp) => {
+  //   console.log(timestamp)
+  //   return new Date(timestamp).toLocaleString("en-US", {
+  //     month: "2-digit",
+  //     day: "2-digit",
+  //     year: "numeric",
+  //     hour: "2-digit",
+  //     minute: "2-digit",
+  //     hour12: false,
+  //   })
+  // }
+
+  const formatDateDay = (timestamp) => {
+    const date = new Date(timestamp);
+    const options = { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true };
+    const formattedDate = new Intl.DateTimeFormat('en-GB', options).format(date);
+    return formattedDate.replace(/(\w+) (\d{1,2})/, "$1, $2").replace(" at ", " ").replace(/\bam\b/, "AM").replace(/\bpm\b/, "PM");
   }
 
   const formatDuration = (ms) => {
@@ -352,19 +382,19 @@ export default function CallsComponent() {
           </div>
           <div className="flex items-center gap-3">
             <button className="custom-button-1">
-              <Download className="w-4 h-4" />
+              <Share className="w-4 h-4" />
               Export
             </button>
             <button className="p-2 text-gray-500 rounded-full hover:bg-gray-100">
-              <Settings className="w-5 h-5" />
+            <History className="w-5 h-5" />
             </button>
           </div>
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <button className="custom-button-1">
+          <div className="custom-button-1">
             <DateRangePicker range={dateRange} setRange={setDateRange} />
-          </button>
+          </div>
           {
             fields.filter(element => element.isAdd === true).map(el => <div key={el.name}>
               <div onClick={() => [setOpenSubDropdown(el.name), set_filterMainOptionBox(false), set_isOpenFilter(true)]} className="custom-button-2">
@@ -613,7 +643,12 @@ export default function CallsComponent() {
                   } cursor-pointer hover:bg-gray-50 calls-table-td-parent`}
                 onClick={() => handleRowClick(call)}
               >
-                {savedFields.includes("Time") ? <td className="px-4 py-3">{formatDate(call.start_timestamp)}</td> : null}
+                {
+                  savedFields.includes("Time") ?
+                    <td style={{ whiteSpace: "nowrap" }} className="px-4 py-3">
+                      {formatDateDay(call.start_timestamp)}
+                    </td> : null
+                }
                 {savedFields.includes("Call Duration") ? <td className="px-4 py-3">{formatDuration(call.duration_ms)}</td> : null}
                 {savedFields.includes("Type") ? <td className="px-4 py-3">{call.call_type}</td> : null}
                 {savedFields.includes("Cost") ? <td className="px-4 py-3">${(call.combined_cost / 100).toFixed(3)}</td> : null}
