@@ -62,24 +62,24 @@ export function CallDetailsDrawer({ call, isOpen, onClose }) {
                     <div className="text-lg font-bold text-gray-900">
                         {formatDate(call.start_timestamp)} - {call.call_type}
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <div className="flex items-center gap-2 group">
-                            <span className="font-mono">Agent: {call.agent || "Unknown"}({call?.agent_id?.slice(0, 3) + '...' + call?.agent_id?.slice(-3)})</span>
+                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <div style={{fontSize: 13}} className="flex items-center group">
+                            <span className="font-mono">Agent: {call.agent_name || "Unknown"} <span className="text-gray-400">({call?.agent_id?.slice(0, 3) + '...' + call?.agent_id?.slice(-3)})</span></span>
                             <button
                                 onClick={(e) => handleCopyClick(e, call.agent_id)}
                                 className="relative p-1 hover:bg-gray-100 rounded"
                             >
-                                {copiedId === call.agent_id ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-500" />}
+                                {copiedId === call.agent_id ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3 text-gray-500" />}
                             </button>
                             {copiedId === call.agent_id && <span className="text-xs text-green-600">Copied!</span>}
                         </div>
-                        <div className="flex items-center gap-2 group">
-                            <span className="font-mono">Call ID: {call?.call_id?.slice(0, 3) + '...' + call?.call_id?.slice(-3)}</span>
+                        <div style={{fontSize: 13}} className="flex items-center group">
+                            <span className="font-mono">Call ID: <span className="text-gray-400">{call?.call_id?.slice(0, 3) + '...' + call?.call_id?.slice(-3)}</span></span>
                             <button
                                 onClick={(e) => handleCopyClick(e, call.call_id)}
                                 className="relative p-1 hover:bg-gray-100 rounded"
                             >
-                                {copiedId === call.call_id ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-500" />}
+                                {copiedId === call.call_id ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3 text-gray-500" />}
                             </button>
                             {copiedId === call.call_id && <span className="text-xs text-green-600">Copied!</span>}
                         </div>

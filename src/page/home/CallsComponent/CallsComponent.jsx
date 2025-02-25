@@ -3,73 +3,76 @@ import { dataArray } from "../../../data/dataArray";
 import {
   Calendar, Filter, Settings, Download, Clock,
   ArrowLeft, ArrowRight, Copy, Check,
-  History, CirclePlus, ChevronDown
+  History, CirclePlus, ChevronDown, X
 } from "lucide-react";
 import { CallDetailsDrawer } from "./call-details-drawer"
 import { agentData } from "../../../data/agentData";
 
 
-const fields = [
+const n_fields = [
   {
     name: "Agent",
-    id: "",
+    id: "agent_name",
     isAdd: false,
     options: agentData.map(agent => agent.agent_name)
   },
-  { name: "Call ID", id: "call_id", isAdd: false, options: [] },
-  { name: "Batch Call ID", id: "", isAdd: false, options: [] },
-  { name: "Type", id: "call_type", isAdd: false, options: ["Inbound", "Outbound", "Automated", "Manual"] },
-  { name: "Call Duration", id: "", isAdd: false, options: [] },
-  { name: "From", id: "", isAdd: false, options: [] },
-  { name: "To", id: "", isAdd: false, options: [] },
-  { name: "User Sentiment", id: "user_sentiment", isAdd: false, options: ["Positive", "Neutral", "Negative", "Unknown"] },
+  { name: "Call ID", id: "call_id", isAdd: false, ans: [], options: [] },
+  { name: "Batch Call ID", id: "agent_id", isAdd: false, ans: [], options: [] },
+  { name: "Type", id: "call_type", isAdd: false, ans: [], options: ["Inbound", "Outbound", "Automated", "Manual", "web_call"] },
+  { name: "Call Duration", id: "", isAdd: false, ans: [], options: [] },
+  { name: "From", id: "from_number", isAdd: false, ans: [], options: [] },
+  { name: "To", id: "to_number", isAdd: false, ans: [], options: [] },
+  { name: "User Sentiment", id: "user_sentiment", isAdd: false, ans: [], options: ["Positive", "Neutral", "Negative", "Unknown"] },
   {
-    name: "Disconnection Reason", id: "disconnection_reason", isAdd: false, options: [
-      "User Hangup",
-      "Agent Hangup",
-      "Call Transfer",
-      "Voicemail Reached",
-      "Inactivity",
-      "Machine Detected",
-      "Max Duration Reached",
-      "Concurrency Limit Reached",
-      "No Valid Payment",
-      "Scam Detected",
-      "Error Inbound Webhook",
-      "Dial Busy",
-      "Dial Failed",
-      "Dial No Answer",
-      "Error Llm Websocket Open",
-      "Error Llm Websocket Lost Connection",
-      "Error Llm Websocket Runtime",
-      "Error Llm Websocket Corrupt Payload",
-      "Error Frontend Corrupted Payload",
-      "Error Twilio",
-      "Error No Audio Received",
-      "Error Asr",
-      "Error Retell",
-      "Error Unknown",
-      "Error User Not Joined",
-      "Registered Call Timeout",
+    name: "Disconnection Reason", id: "disconnection_reason", isAdd: false, ans: [], options: [
+      "user_hangup",
+      "agent_hangup",
+      "call_transfer",
+      "voicemail_reached",
+      "inactivity",
+      "machine_detected",
+      "max_duration_reached",
+      "concurrency_limit_reached",
+      "no_valid_payment",
+      "scam_detected",
+      "error_inbound_webhook",
+      "dial_busy",
+      "dial_failed",
+      "dial_no_answer",
+      "error_llm_websocket_open",
+      "error_llm_websocket_lost_connection",
+      "error_llm_websocket_runtime",
+      "error_llm_websocket_corrupt_payload",
+      "error_frontend_corrupted_payload",
+      "error_twilio",
+      "error_no_audio_received",
+      "error_asr",
+      "error_retell",
+      "error_unknown",
+      "error_user_not_joined",
+      "registered_call_timeout"
     ]
   },
   {
-    name: "Call Successful", id: "call_successful", isAdd: false, options: ["Success", "Unsuccess"]
+    name: "Call Successful", id: "call_successful", isAdd: false, ans: [], options: [true, false]
   },
   {
-    name: "Call Status", id: "call_status", isAdd: false, options: [
+    name: "Call Status", id: "call_status", isAdd: false, ans: [], options: [
       "ended",
       "ongoing",
       "error"]
   },
-  { name: "End to End Latency", id: "", isAdd: false, options: [] } // Added End to End Latency field
+  { name: "End to End Latency", id: "", isAdd: false, ans: [], options: [] } // Added End to End Latency field
 ];
 
 
 export default function CallsComponent() {
   const dataArrayPerPage = 20;
   const [currentPage, setCurrentPage] = useState(1);
-  const [copiedId, setCopiedId] = useState(null)
+  const [copiedId, setCopiedId] = useState(null);
+  const [unfilterDataArray, set_unfilterDataArray] = useState([])
+  const [totalCustomArray, set_totalCustomArray] = useState([])
+  const [fields, set_fields] = useState(n_fields)
   const [selectedCall, setSelectedCall] = useState(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [isCustomizeFieldShow, set_isCustomizeFieldShow] = useState(false)
@@ -90,6 +93,9 @@ export default function CallsComponent() {
   const dropdownFilterRef = useRef(null);
   const [filterMainOptionBox, set_filterMainOptionBox] = useState(true);
 
+  function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -104,36 +110,96 @@ export default function CallsComponent() {
     };
   }, []);
 
-  const toggleOptionSelection = (fieldName, option) => {
-    setSelectedOptions((prev) => {
-      const prevSelected = prev[fieldName] || [];
-      const newSelected = prevSelected.includes(option)
-        ? prevSelected.filter((item) => item !== option) // Deselect
-        : [...prevSelected, option]; // Select
+  useEffect(() => {
+    const agentLookup = agentData.reduce((acc, agent) => {
+      acc[agent.agent_id] = agent.agent_name;
+      return acc;
+    }, {});
 
-      return { ...prev, [fieldName]: newSelected };
-    });
-  };
+    let newDDDD = dataArray.map(item => ({
+      ...item,
+      agent_name: agentLookup[item.agent_id] || "Unknown Agent"
+    }));
+    set_unfilterDataArray(newDDDD)
+    set_totalCustomArray(newDDDD)
+  }, []);
 
-  const applyFilters = () => {
+
+  // const toggleOptionSelection = (fieldName, option) => {
+  //   setSelectedOptions((prev) => {
+  //     const prevSelected = prev[fieldName] || [];
+  //     const newSelected = prevSelected.includes(option)
+  //       ? prevSelected.filter((item) => item !== option) // Deselect
+  //       : [...prevSelected, option]; // Select
+
+  //     return { ...prev, [fieldName]: newSelected };
+  //   });
+  // };
+
+  const applyFilters = async (id) => {
     setSelectedOptions(tempSelectedOptions);
-    console.log("Selected Filters:", tempSelectedOptions);
+    let filterData = unfilterDataArray;
+    let updatedFields = fields;
 
-    // for (let index = 0; index < fields.length; index++) {
-    //   const element = fields[index];
-    //   // console.log([element.id])
-    //   if (selectedOptions[element.name]) {
-    //     // console.log([selectedOptions[element.name]])
-    //     const newDD = dataArray.filter(dt => selectedOptions[element.name].includes(dt[element.id]))
-    //     console.log(newDD)
-    //   }
-    //   // console.log(element.name, selectedOptions[element.name]);
-    // }
+    const onlyTextSerach = [
+      {
+        name: "Call ID",
+        id: "call_id",
+        value: callIdFilter,
+      },
+      {
+        name: "Batch Call ID",
+        id: "agent_id",
+        value: batchCallIdFilter,
+      },
+      {
+        name: "From",
+        id: "from_number",
+        value: fromFilter,
+      },
+      {
+        name: "To",
+        id: "to_number",
+        value: toFilter,
+      },
+    ];
 
-    console.log("Call ID Filter:", callIdFilter);
-    console.log("Batch Call ID Filter:", batchCallIdFilter);
-    console.log("From Filter:", fromFilter);
-    console.log("To Filter:", toFilter);
+
+    for (let index = 0; index < updatedFields.length; index++) {
+      const element = updatedFields[index];
+      // console.log(element.name, '--------------', tempSelectedOptions[element.name], element.id)
+      if (tempSelectedOptions[element.name]) {
+        if (tempSelectedOptions[element.name].length >= 1) {
+          updatedFields = updatedFields.map(field =>
+            field.name === element.name ? { ...field, isAdd: true, ans: tempSelectedOptions[element.name] } : field
+          );
+          filterData = filterData.filter(dt => tempSelectedOptions[element.name].includes(dt[element.id]))
+        } else {
+          updatedFields = updatedFields.map(field =>
+            field.name === element.name ? { ...field, isAdd: false, ans: [] } : field
+          );
+        }
+      }
+    }
+
+    for (let i = 0; i < onlyTextSerach.length; i++) {
+      const text_element = onlyTextSerach[i];
+      if (text_element.value && id != text_element.id) {
+        updatedFields = updatedFields.map(field =>
+          field.name === text_element.name ? { ...field, isAdd: true, ans: [text_element.value] } : field
+        );
+        filterData = filterData.filter(dt => [text_element.value].includes(dt[text_element.id]))
+      }
+    }
+    set_fields(updatedFields)
+    set_totalCustomArray(filterData)
+
+
+    // console.log("Call ID Filter:", callIdFilter);
+    // console.log("Batch Call ID Filter:", batchCallIdFilter);
+    // console.log("From Filter:", fromFilter);
+    // console.log("To Filter:", toFilter);
+
     console.log("Call Duration Condition:", callDurationCondition);
     console.log("Call Duration Value:", callDurationValue);
     console.log("Call Duration Range:", callDurationRange);
@@ -143,12 +209,36 @@ export default function CallsComponent() {
     setOpenSubDropdown(null);
     set_isOpenFilter(false);
   };
+
+  const filterRemoveBtn = async (name, id) => {
+    if (name === "Call ID") {
+      setCallIdFilter("");
+    }
+    if (name === "Batch Call ID") {
+      setBatchCallIdFilter("");
+    }
+    if (name === "From") {
+      setFromFilter("");
+    }
+    if (name === "To") {
+      setToFilter("");
+    }
+    setSelectedOptions(tempSelectedOptions[name] = [])
+    const updatedFields = fields.map(field =>
+      field.name === name ? { ...field, isAdd: false, ans: [] } : field
+    );
+
+    set_fields(updatedFields);
+    await delay(1);
+    applyFilters(id)
+  }
+
   const toggleTempOptionSelection = (fieldName, option) => {
     setTempSelectedOptions((prev) => {
       const prevSelected = prev[fieldName] || [];
       const newSelected = prevSelected.includes(option)
-        ? prevSelected.filter((item) => item !== option) // Deselect
-        : [...prevSelected, option]; // Select
+        ? prevSelected.filter((item) => item !== option)
+        : [...prevSelected, option];
 
       return { ...prev, [fieldName]: newSelected };
     });
@@ -157,7 +247,7 @@ export default function CallsComponent() {
 
   const cancelFilters = () => {
     setTempSelectedOptions(selectedOptions);
-    set_filterMainOptionBox(true)
+    set_isOpenFilter(false);
     setOpenSubDropdown(null);
   };
 
@@ -228,15 +318,14 @@ export default function CallsComponent() {
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`
   }
   const handleRowClick = (call) => {
-    console.log(call)
     setSelectedCall(call)
     setIsDrawerOpen(true)
   }
 
-  const totalPages = Math.ceil(dataArray.length / dataArrayPerPage);
+  const totalPages = Math.ceil(totalCustomArray.length / dataArrayPerPage);
   const startIndex = (currentPage - 1) * dataArrayPerPage;
   const endIndex = startIndex + dataArrayPerPage;
-  const currentdataArray = dataArray.slice(startIndex, endIndex);
+  const currentdataArray = totalCustomArray.slice(startIndex, endIndex);
 
   const goToNextPage = () => {
     if (currentPage < totalPages) {
@@ -249,7 +338,6 @@ export default function CallsComponent() {
       setCurrentPage(currentPage - 1);
     }
   };
-
 
 
   return (
@@ -271,11 +359,26 @@ export default function CallsComponent() {
           </div>
         </div>
 
-        <div className="flex gap-3">
-          <button onClick={() => [setOpenSubDropdown("Call Successful"), set_filterMainOptionBox(false),  set_isOpenFilter(true)]} className="custom-button-1">
+        <div className="flex flex-wrap gap-3">
+          <button className="custom-button-1">
             <Calendar className="w-4 h-4" />
             Date Range
           </button>
+          {
+            fields.filter(element => element.isAdd === true).map(el => <div key={el.name}>
+              <div onClick={() => [setOpenSubDropdown(el.name), set_filterMainOptionBox(false), set_isOpenFilter(true)]} className="custom-button-2">
+                <span>{el.name}</span>
+                <span className="flex gap-2">
+                  <span className="px-2 text-blue-500 hover:bg-gray-200 rounded-md">{el.name === "Call Successful" ? el.ans === true ? "Success" : "Unsuccess" : el.ans[0]} {el.ans.length > 1 && `or ${el.ans.length - 1} more`} </span>
+                  <button
+                    onClick={() => filterRemoveBtn(el.name, el.id)}
+                    className="px-1 z-1 hover:bg-gray-200 rounded-md">
+                    <X className="w-4 h-4" /></button>
+                </span>
+              </div>
+            </div>
+            )
+          }
           <div className="relative" ref={dropdownFilterRef}>
             <button
               onClick={() => [set_isOpenFilter(!isOpenFilter), set_filterMainOptionBox(true), setOpenSubDropdown(null)]}
@@ -351,45 +454,61 @@ export default function CallsComponent() {
                               {((field.name === "Call Duration" && callDurationCondition === "between") ||
                                 (field.name === "End to End Latency" && latencyCondition === "between")) ? (
                                 <div className="mt-2 flex space-x-2">
-                                  <input
-                                    type="number"
-                                    value={(field.name === "Call Duration" ? callDurationRange[0] : latencyRange[0]) || ""}
-                                    onChange={(e) =>
-                                      field.name === "Call Duration"
-                                        ? setCallDurationRange([e.target.value, callDurationRange[1]])
-                                        : setLatencyRange([e.target.value, latencyRange[1]])
-                                    }
-                                    style={{ fontSize: 14 }}
-                                    className="w-1/2 px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                                    placeholder="From"
-                                  />
-                                  <input
-                                    type="number"
-                                    value={(field.name === "Call Duration" ? callDurationRange[1] : latencyRange[1]) || ""}
-                                    onChange={(e) =>
-                                      field.name === "Call Duration"
-                                        ? setCallDurationRange([callDurationRange[0], e.target.value])
-                                        : setLatencyRange([latencyRange[0], e.target.value])
-                                    }
-                                    style={{ fontSize: 14 }}
-                                    className="w-1/2 px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                                    placeholder="To"
-                                  />
+                                  <div>
+                                    <input
+                                      type="number"
+                                      value={(field.name === "Call Duration" ? callDurationRange[0] : latencyRange[0]) || ""}
+                                      onChange={(e) =>
+                                        field.name === "Call Duration"
+                                          ? setCallDurationRange([e.target.value, callDurationRange[1]])
+                                          : setLatencyRange([e.target.value, latencyRange[1]])
+                                      }
+                                      style={{ fontSize: 14 }}
+                                      className="w-2/3 me-1 px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                                      placeholder="From"
+                                    />
+                                    <span style={{ fontSize: 14 }}>{
+                                      field.name === "Call Duration" ? "mins" : "ms"
+                                    }</span>
+                                  </div>
+                                  <div>
+                                    <input
+                                      type="number"
+                                      value={(field.name === "Call Duration" ? callDurationRange[1] : latencyRange[1]) || ""}
+                                      onChange={(e) =>
+                                        field.name === "Call Duration"
+                                          ? setCallDurationRange([callDurationRange[0], e.target.value])
+                                          : setLatencyRange([latencyRange[0], e.target.value])
+                                      }
+                                      style={{ fontSize: 14 }}
+                                      className="w-2/3 me-1 px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                                      placeholder="To"
+                                    />
+                                    <span style={{ fontSize: 14 }}>{
+                                      field.name === "Call Duration" ? "mins" : "ms"
+                                    }</span>
+                                  </div>
                                 </div>
                               ) : (
-                                <input
-                                  type="number"
-                                  value={field.name === "Call Duration" ? callDurationValue : latencyValue || ""}
-                                  onChange={(e) =>
-                                    field.name === "Call Duration"
-                                      ? setCallDurationValue(e.target.value)
-                                      : setLatencyValue(e.target.value)
-                                  }
-                                  style={{ fontSize: 14 }}
-                                  className="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                                  placeholder="Enter Duration"
-                                />
+                                <div className="flex gap-2 items-center">
+                                  <input
+                                    type="number"
+                                    value={field.name === "Call Duration" ? callDurationValue : latencyValue || ""}
+                                    onChange={(e) =>
+                                      field.name === "Call Duration"
+                                        ? setCallDurationValue(e.target.value)
+                                        : setLatencyValue(e.target.value)
+                                    }
+                                    style={{ fontSize: 14 }}
+                                    className="w-4/5 mt-2 px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                                    placeholder="Enter Duration"
+                                  />
+                                  <span style={{ fontSize: 14 }}>{
+                                    field.name === "Call Duration" ? "mins" : "ms"
+                                  }</span>
+                                </div>
                               )}
+
                             </div>
                           ) : field.options.length > 0 ? (
                             field.options.map((option) => (
@@ -399,7 +518,7 @@ export default function CallsComponent() {
                                   checked={tempSelectedOptions[field.name]?.includes(option) || false}
                                   onChange={() => toggleTempOptionSelection(field.name, option)}
                                 />
-                                <span style={{ fontSize: 14 }}>{option}</span>
+                                <span style={{ fontSize: 14 }}>{field.name === "Call Successful" ? option === true ? "Success" : "Unsuccess" : option}</span>
                               </label>
                             ))
                           ) : null}
@@ -431,43 +550,45 @@ export default function CallsComponent() {
               </div>
             )}
           </div>
-          <button
-            onClick={() => set_isCustomizeFieldShow(!isCustomizeFieldShow)}
-            className="custom-button-1">
-            <Settings className="w-4 h-4" />
-            Customize Field
-          </button>
-          {
+          <div className="relative" ref={customizeFieldShowRef}>
+            <button
+              onClick={() => set_isCustomizeFieldShow(!isCustomizeFieldShow)}
+              className="custom-button-1">
+              <Settings className="w-4 h-4" />
+              Customize Field
+            </button>
+            {
 
-            isCustomizeFieldShow &&
-            <div ref={customizeFieldShowRef} className="w-fit absolute left-66 top-34 z-10 mt-2 bg-white border border-gray-300 shadow-lg rounded-lg p-2">
-              {
-                allFields.map((field) => (
-                  <div className="rounded-md hover:bg-gray-100" key={field}>
-                    <label className="flex ps-2 p-1 items-center space-x-2 cursor-pointer hover:bg-gray-100 rounded-md">
-                      <input
-                        type="checkbox"
-                        id={field}
-                        className="cursor-pointer"
-                        checked={selectedFields.includes(field)}
-                        onChange={() => handleCheckboxChange(field)}
-                      />
-                      <span style={{ fontSize: 14 }}>{field}</span>
-                    </label>
-                  </div>
-                ))
-              }
-              <div style={{
-                marginTop: 10,
-                borderTop: '1px solid #e1e4ea',
-                paddingTop: 10,
-                textAlign: 'end'
-              }}>
-                <button className='custom-button-cancel' onClick={handleCancel_customizeField}>Cancel</button>
-                <button className='custom-button-save' onClick={handleSave_customizeField}>Save</button>
+              isCustomizeFieldShow &&
+              <div className="absolute bg-white shadow-lg p-2 rounded-lg w-64 mt-2 border border-gray-300 z-10">
+                {
+                  allFields.map((field) => (
+                    <div className="rounded-md hover:bg-gray-100" key={field}>
+                      <label className="flex ps-2 p-1 items-center space-x-2 cursor-pointer hover:bg-gray-100 rounded-md">
+                        <input
+                          type="checkbox"
+                          id={field}
+                          className="cursor-pointer"
+                          checked={selectedFields.includes(field)}
+                          onChange={() => handleCheckboxChange(field)}
+                        />
+                        <span style={{ fontSize: 14 }}>{field}</span>
+                      </label>
+                    </div>
+                  ))
+                }
+                <div style={{
+                  marginTop: 10,
+                  borderTop: '1px solid #e1e4ea',
+                  paddingTop: 10,
+                  textAlign: 'end'
+                }}>
+                  <button className='custom-button-cancel' onClick={handleCancel_customizeField}>Cancel</button>
+                  <button className='custom-button-save' onClick={handleSave_customizeField}>Save</button>
+                </div>
               </div>
-            </div>
-          }
+            }
+          </div>
         </div>
       </div>
 
@@ -544,8 +665,51 @@ export default function CallsComponent() {
                     {call.user_sentiment}
                   </span>
                 </td> : null}
-                {savedFields.includes("From") ? <td className="px-4 py-3">{call.from_number}</td> : null}
-                {savedFields.includes("To") ? <td className="px-4 py-3">{call.to_number}</td> : null}
+                {
+                  savedFields.includes("From") ? <td className="px-4 py-3">
+                    <div className="flex items-center gap-2 group">
+                      <span className="font-mono text-xs">{call.from_number}</span>
+                      <button
+                        onClick={(e) => handleCopyClick(e, call.from_number)}
+                        className="relative p-1 opacity-0 group-hover:opacity-100 hover:bg-gray-100 rounded transition-opacity"
+                      >
+                        {copiedId === call.from_number ? (
+                          <Check className="w-4 h-4 text-green-500" />
+                        ) : (
+                          <Copy className="w-4 h-4 text-gray-500" />
+                        )}
+                        {copiedId === call.from_number && (
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded">
+                            Copied!
+                          </div>
+                        )}
+                      </button>
+                    </div>
+
+                  </td> : null
+                }
+                {
+                  savedFields.includes("To") ? <td className="px-4 py-3">
+                    <div className="flex items-center gap-2 group">
+                      <span className="font-mono text-xs">{call.to_number}</span>
+                      <button
+                        onClick={(e) => handleCopyClick(e, call.to_number)}
+                        className="relative p-1 opacity-0 group-hover:opacity-100 hover:bg-gray-100 rounded transition-opacity"
+                      >
+                        {copiedId === call.to_number ? (
+                          <Check className="w-4 h-4 text-green-500" />
+                        ) : (
+                          <Copy className="w-4 h-4 text-gray-500" />
+                        )}
+                        {copiedId === call.to_number && (
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded">
+                            Copied!
+                          </div>
+                        )}
+                      </button>
+                    </div>
+                  </td> : null
+                }
                 {savedFields.includes("Call Successful") ? <td className="px-4 py-3">
                   <span
                     className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${call.call_successful ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
