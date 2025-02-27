@@ -3,12 +3,12 @@ import { useState, useEffect, useRef } from "react"
 import {
   Filter, Settings, Download, Share,
   ArrowLeft, ArrowRight, Copy, Check,
-  History, CirclePlus, ChevronDown, X
+  History, CirclePlus, ChevronDown, X, ExternalLink
 } from "lucide-react";
 import { CallDetailsDrawer } from "./call-details-drawer"
 import { agentData } from "../../../data/agentData";
 import DateRangePicker from "./DateRangePicker";
-import { useLocation } from "react-router";
+import { Link, useLocation } from "react-router";
 
 
 const n_fields = [
@@ -118,8 +118,8 @@ export default function CallsComponent() {
   const [selectedOptions, setSelectedOptions] = useState({});
   const [tempSelectedOptions, setTempSelectedOptions] = useState({});
   const [callIdFilter, setCallIdFilter] = useState("");
-  const [batchCallIdFilter, setBatchCallIdFilter] = useState(""); 
-  const [contactIdFilter, setContactIdFilter] = useState(""); 
+  const [batchCallIdFilter, setBatchCallIdFilter] = useState("");
+  const [contactIdFilter, setContactIdFilter] = useState("");
   const [fromFilter, setFromFilter] = useState("");
   const [toFilter, setToFilter] = useState("");
   const [callDurationCondition, setCallDurationCondition] = useState("greater");
@@ -389,7 +389,7 @@ export default function CallsComponent() {
   }, []);
 
   const allFields = [
-    "Time", "Call Duration", "Type", "Direction", 
+    "Time", "Call Duration", "Type", "Direction",
     "Cost", "Call ID", "Contact ID",
     "Disconnection Reason", "Call Completion Reason",
     "Call Status", "User Sentiment",
@@ -470,8 +470,20 @@ export default function CallsComponent() {
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
+
             <History className="w-5 h-5" />
             <h1 className="text-xl font-semibold">Call History</h1>
+
+            <Link to="/add-data"><button className='
+             ms-5 bg-green-500 py-2 px-5 
+             font-bold text-white
+             flex gap-2 items-center rounded-sm
+             '>
+              Add Data
+              <ExternalLink className='h-5' />
+            </button>
+            </Link>
+
           </div>
           <div className="flex items-center gap-3">
             <button className="custom-button-1">
@@ -544,19 +556,19 @@ export default function CallsComponent() {
                               <input
                                 type="text"
                                 value={field.name === "Call ID" ? callIdFilter :
-                                  field.name === "Batch Call ID" ? batchCallIdFilter :       
-                                  field.name === "Contact ID" ? contactIdFilter :       
-                                    field.name === "From" ? fromFilter : toFilter}
+                                  field.name === "Batch Call ID" ? batchCallIdFilter :
+                                    field.name === "Contact ID" ? contactIdFilter :
+                                      field.name === "From" ? fromFilter : toFilter}
                                 onChange={(e) =>
                                   field.name === "Call ID"
                                     ? setCallIdFilter(e.target.value)
                                     : field.name === "Batch Call ID"
                                       ? setBatchCallIdFilter(e.target.value)
-                                    : field.name === "Contact ID"
-                                      ? setContactIdFilter(e.target.value)
-                                      : field.name === "From"
-                                        ? setFromFilter(e.target.value)
-                                        : setToFilter(e.target.value)
+                                      : field.name === "Contact ID"
+                                        ? setContactIdFilter(e.target.value)
+                                        : field.name === "From"
+                                          ? setFromFilter(e.target.value)
+                                          : setToFilter(e.target.value)
                                 }
                                 style={{ fontSize: 14 }}
                                 className="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400 focus:outline-none"
@@ -747,7 +759,7 @@ export default function CallsComponent() {
                 {savedFields.includes("Call Duration") ? <td className="px-4 py-3">{formatDuration(call.duration_ms)}</td> : null}
                 {savedFields.includes("Type") ? <td className="px-4 py-3">{call.call_type}</td> : null}
                 {savedFields.includes("Direction") ? <td className="px-4 py-3">{call.direction}</td> : null}
-                
+
                 {savedFields.includes("Cost") ? <td className="px-4 py-3">${(call.combined_cost / 100).toFixed(3)}</td> : null}
                 {
                   savedFields.includes("Call ID") ?

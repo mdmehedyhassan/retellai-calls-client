@@ -14,12 +14,6 @@ export function CallDetailsDrawer({ call, isOpen, onClose }) {
         }
     };
 
-    useEffect(() => {
-        if (call) {
-            console.log("Call Data:", call);
-        }
-    }, [call]);
-
 
     if (!isOpen) return null;
     if (!call) return <div className="fixed inset-y-0 right-0 w-[600px] bg-white p-6">Loading call details...</div>;
