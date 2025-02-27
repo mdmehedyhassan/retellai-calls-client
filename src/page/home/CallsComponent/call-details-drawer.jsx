@@ -109,12 +109,11 @@ export function CallDetailsDrawer({ call, isOpen, onClose }) {
                 <div className="space-y-2 text-sm text-gray-700">
                     <div className="flex items-center justify-between">
                         <span className="flex gap-2 items-center"><SquareCheck className="w-4 h-4" /> Call Successful</span>
-                        <span className={call.call_successful ? "text-green-600" : "text-red-600"}>
+                        <span className={call.call_successful == "Unsuccessful" ? "text-red-600" : "text-green-600"}>
                             <span
-                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${call.call_successful ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                                    }`}
+                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${call.call_successful == "Unsuccessful" ?  "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}
                             >
-                                {call.call_successful ? "Successful" : "Unsuccessful"}
+                                {call.call_successful}
                             </span>
                         </span>
                     </div>

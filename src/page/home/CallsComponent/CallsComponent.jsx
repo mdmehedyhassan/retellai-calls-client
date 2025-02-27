@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react"
-import { dataArray } from "../../../data/dataArray";
+// import { s_dataArray } from "../../../data/dataArray";
 import {
   Filter, Settings, Download, Share,
   ArrowLeft, ArrowRight, Copy, Check,
@@ -8,6 +8,7 @@ import {
 import { CallDetailsDrawer } from "./call-details-drawer"
 import { agentData } from "../../../data/agentData";
 import DateRangePicker from "./DateRangePicker";
+import { useLocation } from "react-router";
 
 
 const n_fields = [
@@ -19,7 +20,9 @@ const n_fields = [
   },
   { name: "Call ID", id: "call_id", isAdd: false, ans: [], options: [] },
   { name: "Batch Call ID", id: "agent_id", isAdd: false, ans: [], options: [] },
-  { name: "Type", id: "call_type", isAdd: false, ans: [], options: ["Inbound", "Outbound", "Automated", "Manual", "web_call"] },
+  { name: "Contact ID", id: "contact_id", isAdd: false, ans: [], options: [] },
+  { name: "Type", id: "call_type", isAdd: false, ans: [], options: ["phone_call", "web_call"] },
+  { name: "Direction", id: "direction", isAdd: false, ans: [], options: ["inbound", "outbound", "automated", "manual",] },
   { name: "Call Duration", id: "duration_ms", isAdd: false, ans: [], options: [] },
   { name: "From", id: "from_number", isAdd: false, ans: [], options: [] },
   { name: "To", id: "to_number", isAdd: false, ans: [], options: [] },
@@ -55,7 +58,37 @@ const n_fields = [
     ]
   },
   {
-    name: "Call Successful", id: "call_successful", isAdd: false, ans: [], options: [true, false]
+    name: "Call Completion Reason", id: "call_completion_reason", isAdd: false, ans: [], options: [
+      "user_hangup",
+      "agent_hangup",
+      "call_transfer",
+      "voicemail_reached",
+      "inactivity",
+      "machine_detected",
+      "max_duration_reached",
+      "concurrency_limit_reached",
+      "no_valid_payment",
+      "scam_detected",
+      "error_inbound_webhook",
+      "dial_busy",
+      "dial_failed",
+      "dial_no_answer",
+      "error_llm_websocket_open",
+      "error_llm_websocket_lost_connection",
+      "error_llm_websocket_runtime",
+      "error_llm_websocket_corrupt_payload",
+      "error_frontend_corrupted_payload",
+      "error_twilio",
+      "error_no_audio_received",
+      "error_asr",
+      "error_retell",
+      "error_unknown",
+      "error_user_not_joined",
+      "registered_call_timeout"
+    ]
+  },
+  {
+    name: "Call Successful", id: "call_successful", isAdd: false, ans: [], options: ["Complete", "Successful", "Unsuccessful"]
   },
   {
     name: "Call Status", id: "call_status", isAdd: false, ans: [], options: [
@@ -63,13 +96,16 @@ const n_fields = [
       "ongoing",
       "error"]
   },
-  { name: "End to End Latency", id: "latency", isAdd: false, ans: [], options: [] } // Added End to End Latency field
+  { name: "End to End Latency", id: "latency", isAdd: false, ans: [], options: [] }
 ];
+
 
 
 export default function CallsComponent() {
   const dataArrayPerPage = 20;
+  let location = useLocation();
   const [currentPage, setCurrentPage] = useState(1);
+  const [dataArray, set_dataArray] = useState([])
   const [copiedId, setCopiedId] = useState(null);
   const [unfilterDataArray, set_unfilterDataArray] = useState([])
   const [totalCustomArray, set_totalCustomArray] = useState([])
@@ -82,7 +118,8 @@ export default function CallsComponent() {
   const [selectedOptions, setSelectedOptions] = useState({});
   const [tempSelectedOptions, setTempSelectedOptions] = useState({});
   const [callIdFilter, setCallIdFilter] = useState("");
-  const [batchCallIdFilter, setBatchCallIdFilter] = useState("");
+  const [batchCallIdFilter, setBatchCallIdFilter] = useState(""); 
+  const [contactIdFilter, setContactIdFilter] = useState(""); 
   const [fromFilter, setFromFilter] = useState("");
   const [toFilter, setToFilter] = useState("");
   const [callDurationCondition, setCallDurationCondition] = useState("greater");
@@ -97,7 +134,21 @@ export default function CallsComponent() {
 
   function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
-  }
+  };
+
+  useEffect(() => {
+    fetch('https://retellai-ghl.vercel.app/get-calls', {
+      headers: {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiUmV0ZWxsIEFpIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzNTY0NTQ1OTAyMn0.yFbVXCvn_xdmUBEOBAql56_1W-oXcKvtveZhEO5MBNo"
+      }
+    })
+      .then(res => res.json())
+      .then(data => {
+        set_dataArray(data)
+      })
+    console.log(location)
+  }, [location]);
+  delay(1)
 
   useEffect(() => {
     applyFilters()
@@ -128,7 +179,7 @@ export default function CallsComponent() {
     }));
     set_unfilterDataArray(newDDDD)
     set_totalCustomArray(newDDDD)
-  }, []);
+  }, [dataArray]);
 
   const applyFilters = async (id) => {
     setSelectedOptions(tempSelectedOptions);
@@ -145,6 +196,11 @@ export default function CallsComponent() {
         name: "Batch Call ID",
         id: "agent_id",
         value: batchCallIdFilter,
+      },
+      {
+        name: "Contact ID",
+        id: "contact_id",
+        value: contactIdFilter,
       },
       {
         name: "From",
@@ -208,10 +264,10 @@ export default function CallsComponent() {
         m_value: latencyValue + 'ms',
       },
     ];
-    if(id === 'duration_ms'){
+    if (id === 'duration_ms') {
       durationAndLatency = [durationAndLatency[1]]
     }
-    if(id === 'latency'){
+    if (id === 'latency') {
       durationAndLatency = [durationAndLatency[0]]
     }
     for (let index = 0; index < durationAndLatency.length; index++) {
@@ -237,7 +293,7 @@ export default function CallsComponent() {
             if (el.condition === "greater" && el.value <= element[el.id] && element[el.id] != 0) {
               dataDurationArray = [...dataDurationArray, element];
             }
-            if (el.condition === "less" && el.value >= element[el.id] && element[el.id] != 0  && el.value != 0) {
+            if (el.condition === "less" && el.value >= element[el.id] && element[el.id] != 0 && el.value != 0) {
               dataDurationArray = [...dataDurationArray, element]
             }
             updatedFields = updatedFields.map(field =>
@@ -274,6 +330,9 @@ export default function CallsComponent() {
     }
     if (name === "Batch Call ID") {
       setBatchCallIdFilter("");
+    }
+    if (name === "Contact ID") {
+      setContactIdFilter("");
     }
     if (name === "From") {
       setFromFilter("");
@@ -330,9 +389,11 @@ export default function CallsComponent() {
   }, []);
 
   const allFields = [
-    "Time", "Call Duration", "Type", "Cost", "Call ID",
-    "Disconnection Reason", "Call Status", "User Sentiment",
-    "From", "To", "Call Successful", "End to End Latency"
+    "Time", "Call Duration", "Type", "Direction", 
+    "Cost", "Call ID", "Contact ID",
+    "Disconnection Reason", "Call Completion Reason",
+    "Call Status", "User Sentiment",
+    "From", "To", "Call Successful", "End to End Latency",
   ];
   const [selectedFields, setSelectedFields] = useState([...allFields]);
   const [savedFields, setSavedFields] = useState([...allFields]);
@@ -353,7 +414,7 @@ export default function CallsComponent() {
     setSelectedFields([...savedFields]);
     set_isCustomizeFieldShow(false)
   };
-  
+
   const handleCopyClick = async (e, callId) => {
     e.stopPropagation()
     try {
@@ -478,18 +539,21 @@ export default function CallsComponent() {
                         <div style={{ maxHeight: 300, overflow: 'auto' }}>
                           <p style={{ fontSize: 14 }} className="text-gray-600 font-semibold mb-2">Filter by {field.name}</p>
 
-                          {field.name === "Call ID" || field.name === "Batch Call ID" || field.name === "From" || field.name === "To" ? (
+                          {field.name === "Call ID" || field.name === "Batch Call ID" || field.name === "Contact ID" || field.name === "From" || field.name === "To" ? (
                             <div className="mb-4">
                               <input
                                 type="text"
                                 value={field.name === "Call ID" ? callIdFilter :
-                                  field.name === "Batch Call ID" ? batchCallIdFilter :
+                                  field.name === "Batch Call ID" ? batchCallIdFilter :       
+                                  field.name === "Contact ID" ? contactIdFilter :       
                                     field.name === "From" ? fromFilter : toFilter}
                                 onChange={(e) =>
                                   field.name === "Call ID"
                                     ? setCallIdFilter(e.target.value)
                                     : field.name === "Batch Call ID"
                                       ? setBatchCallIdFilter(e.target.value)
+                                    : field.name === "Contact ID"
+                                      ? setContactIdFilter(e.target.value)
                                       : field.name === "From"
                                         ? setFromFilter(e.target.value)
                                         : setToFilter(e.target.value)
@@ -682,6 +746,8 @@ export default function CallsComponent() {
                 }
                 {savedFields.includes("Call Duration") ? <td className="px-4 py-3">{formatDuration(call.duration_ms)}</td> : null}
                 {savedFields.includes("Type") ? <td className="px-4 py-3">{call.call_type}</td> : null}
+                {savedFields.includes("Direction") ? <td className="px-4 py-3">{call.direction}</td> : null}
+                
                 {savedFields.includes("Cost") ? <td className="px-4 py-3">${(call.combined_cost / 100).toFixed(3)}</td> : null}
                 {
                   savedFields.includes("Call ID") ?
@@ -707,9 +773,38 @@ export default function CallsComponent() {
                     </td>
                     : null
                 }
+                {
+                  savedFields.includes("Contact ID") ?
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2 group">
+                        <span className="font-mono text-xs">{call.contact_id}</span>
+                        <button
+                          onClick={(e) => handleCopyClick(e, call.contact_id)}
+                          className="relative p-1 opacity-0 group-hover:opacity-100 hover:bg-gray-100 rounded transition-opacity"
+                        >
+                          {copiedId === call.contact_id ? (
+                            <Check className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <Copy className="w-4 h-4 text-gray-500" />
+                          )}
+                          {copiedId === call.contact_id && (
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded">
+                              Copied!
+                            </div>
+                          )}
+                        </button>
+                      </div>
+                    </td>
+                    : null
+                }
                 {savedFields.includes("Disconnection Reason") ? <td className="px-4 py-3">
                   <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100">
                     {call.disconnection_reason}
+                  </span>
+                </td> : null}
+                {savedFields.includes("Call Completion Reason") ? <td className="px-4 py-3">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100">
+                    {call.call_completion_reason}
                   </span>
                 </td> : null}
                 {savedFields.includes("Call Status") ? <td className="px-4 py-3">
@@ -779,10 +874,11 @@ export default function CallsComponent() {
                 }
                 {savedFields.includes("Call Successful") ? <td className="px-4 py-3">
                   <span
-                    className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${call.call_successful ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                      }`}
+                    className={`inline-flex items-center px-2 py-1 rounded-full text-xs 
+                      ${call.call_successful == "Unsuccessful" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}
+                      `}
                   >
-                    {call.call_successful ? "Successful" : "Unsuccessful"}
+                    {call.call_successful}
                   </span>
                 </td> : null}
                 {savedFields.includes("End to End Latency") ? <td className="px-4 py-3">{parseInt(call.latency) == 0 ? "" : parseInt(call.latency) + 'ms'}</td> : null}
